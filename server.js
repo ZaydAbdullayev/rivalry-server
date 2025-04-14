@@ -42,24 +42,6 @@ app.get("/results", (req, res) => {
     });
 });
 
-app.post("/change-side", (req, res) => {
-    const { vote } = req.body;
-    const ip = req.ip;
-
-    if (!voters.has(ip)) {
-        return res.status(403).json({ message: "You have not voted yet." });
-    }
-
-    if (vote === "support" || vote === "oppose") {
-        votes[vote]++;
-        const otherVote = vote === "support" ? "oppose" : "support";
-        votes[otherVote]--;
-        return res.json({ success: true });
-    }
-
-    return res.status(400).json({ message: "Invalid vote." });
-});
-
 app.listen(PORT, () => {
     console.log(`🎉 Server running on http://localhost:${PORT}`);
 });
