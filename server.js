@@ -1,15 +1,49 @@
 import express from "express";
 import cors from "cors";
+import fs from "fs";
 
 const app = express();
 const PORT = 8088;
+const DB_FILE = "./data.json";
 
 app.use(cors());
 app.use(express.json());
 
-let votes = { support: 0, oppose: 0 };
-const allVoters = new Set(); // basit IP temelli oy sınırlayıcı
-const all_visitors = new Set(); // IP temelli ziyaretçi sınırlayıcı
+// Kalıcı veriyi oku
+const readVotes = () => {
+    try {
+        const data = JSON.parse(fs.readFileSync(DB_FILE, "utf-8"));
+        return {
+            support: data.support || 0,
+            oppose: data.oppose || 0,
+            voters: new Set(data.voters || []),
+            visitors: new Set(data.visitors || []),
+        };
+    } catch {
+        return {
+            support: 0,
+            oppose: 0,
+            voters: new Set(),
+            visitors: new Set(),
+        };
+    }
+};
+
+// Kalıcı veriyi kaydet
+const saveVotes = (votes, voters, visitors) => {
+    const data = {
+        support: votes.support,
+        oppose: votes.oppose,
+        voters: Array.from(voters),
+        visitors: Array.from(visitors),
+    };
+    fs.writeFileSync(DB_FILE, JSON.stringify(data), "utf-8");
+};
+
+const stored = readVotes();
+let votes = { support: stored.support, oppose: stored.oppose };
+let allVoters = stored.voters;
+let all_visitors = stored.visitors;
 
 app.post("/vote", (req, res) => {
     const { vote } = req.body;
@@ -22,6 +56,7 @@ app.post("/vote", (req, res) => {
     if (vote === "support" || vote === "oppose") {
         votes[vote]++;
         allVoters.add(ip);
+        saveVotes(votes, allVoters, all_visitors);
         return res.json({ success: true });
     }
 
@@ -30,9 +65,9 @@ app.post("/vote", (req, res) => {
 
 app.get("/results", (req, res) => {
     const ip = req.ip;
-
     if (!all_visitors.has(ip)) {
         all_visitors.add(ip);
+        saveVotes(votes, allVoters, all_visitors);
     }
 
     res.json({
