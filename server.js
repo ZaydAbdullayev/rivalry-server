@@ -7,7 +7,7 @@ const PORT = 8088;
 app.use(cors());
 app.use(express.json());
 
-let votes = { support: 1, oppose: 1 };
+let votes = { support: 0, oppose: 0 };
 const voters = new Set(); // basit IP temelli oy sınırlayıcı
 const visitors = new Set(); // IP temelli ziyaretçi sınırlayıcı
 
